@@ -1,47 +1,158 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr">
-
+<html lang="id">
 <head>
   <meta charset="utf-8">
-  <title>Language Translator | CodingNepal</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#ffffff">
+  <meta
+    name="description"
+    content="Terjemahkan teks dengan cepat dan mudah."
+  >
+  <title>Translator</title>
   <link rel="stylesheet" href="style.css">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" />
+  <script src="countries.js" defer></script>
+  <script src="script.js" defer></script>
 </head>
-
 <body>
-  <div class="container">
-    <h1 class="f">translator</h1>
-    <div class="wrapper">
-      <div class="text-input">
-        <textarea spellcheck="false" class="from-text" placeholder="Enter text"></textarea>
-        <textarea spellcheck="false" readonly disabled class="to-text" placeholder="Translation"></textarea>
+  <main class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="./" aria-label="Translator, beranda">
+        <span class="brand-mark" aria-hidden="true">Aa</span>
+        <span class="brand-name">translator</span>
+      </a>
+      <span class="topbar-note">PENERJEMAH TEKS</span>
+    </header>
+
+    <section class="intro" aria-labelledby="page-title">
+      <p class="eyebrow">BAHASA, TANPA BATAS</p>
+      <h1 id="page-title">Katakan dengan<br>bahasa lain.</h1>
+      <p class="intro-copy">
+        Terjemahkan teks dengan sederhana dan cepat.
+      </p>
+    </section>
+
+    <form id="translatorForm" class="translator" novalidate>
+      <div class="language-bar">
+        <label class="language-field">
+          <span class="field-label">Dari</span>
+          <select id="sourceLanguage" aria-label="Bahasa sumber"></select>
+        </label>
+
+        <button
+          class="swap-button"
+          id="swapLanguages"
+          type="button"
+          aria-label="Tukar bahasa"
+          title="Tukar bahasa"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M7 7h13m0 0-3-3m3 3-3 3M17 17H4m0 0 3 3m-3-3 3-3"/>
+          </svg>
+        </button>
+
+        <label class="language-field language-field-target">
+          <span class="field-label">Ke</span>
+          <select id="targetLanguage" aria-label="Bahasa tujuan"></select>
+        </label>
       </div>
-      <ul class="controls">
-        <li class="row from">
-          <div class="icons">
-            <i id="from" class="fas fa-volume-up"></i>
-            <i id="from" class="fas fa-copy"></i>
-          </div>
-          <select></select>
-        </li>
-        <li class="exchange"><i class="fas fa-exchange-alt"></i></li>
-        <li class="row to">
-          <select></select>
-          <div class="icons">
-            <i id="to" class="fas fa-volume-up"></i>
-            <i id="to" class="fas fa-copy"></i>
-          </div>
-        </li>
-      </ul>
-    </div>
-    <button>Translate Text</button>
-  </div>
 
-  <script src="countries.js"></script>
-  <script src="script.js"></script>
+      <div class="editor-grid">
+        <section class="editor-panel" aria-labelledby="sourceHeading">
+          <div class="panel-heading">
+            <h2 id="sourceHeading">Teks asli</h2>
+            <div class="panel-actions">
+              <button
+                class="icon-button"
+                type="button"
+                data-action="speak"
+                data-target="source"
+                aria-label="Bacakan teks asli"
+                title="Bacakan"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M11 5 6 9H3v6h3l5 4V5Zm4 4a5 5 0 0 1 0 6m3-9a9 9 0 0 1 0 12"/>
+                </svg>
+              </button>
+              <button
+                class="icon-button"
+                type="button"
+                data-action="copy"
+                data-target="source"
+                aria-label="Salin teks asli"
+                title="Salin"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <rect x="8" y="8" width="12" height="13" rx="2"/>
+                  <path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <textarea
+            id="sourceText"
+            placeholder="Tulis sesuatu..."
+            aria-label="Teks yang ingin diterjemahkan"
+            spellcheck="true"
+          ></textarea>
+        </section>
 
+        <section class="editor-panel result-panel" aria-labelledby="resultHeading">
+          <div class="panel-heading">
+            <h2 id="resultHeading">Terjemahan</h2>
+            <div class="panel-actions">
+              <button
+                class="icon-button"
+                type="button"
+                data-action="speak"
+                data-target="result"
+                aria-label="Bacakan terjemahan"
+                title="Bacakan"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M11 5 6 9H3v6h3l5 4V5Zm4 4a5 5 0 0 1 0 6m3-9a9 9 0 0 1 0 12"/>
+                </svg>
+              </button>
+              <button
+                class="icon-button"
+                type="button"
+                data-action="copy"
+                data-target="result"
+                aria-label="Salin terjemahan"
+                title="Salin"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <rect x="8" y="8" width="12" height="13" rx="2"/>
+                  <path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <textarea
+            id="resultText"
+            placeholder="Hasil terjemahan akan muncul di sini."
+            aria-label="Hasil terjemahan"
+            readonly
+          ></textarea>
+        </section>
+      </div>
+
+      <div class="form-footer">
+        <p id="statusMessage" class="status-message" role="status" aria-live="polite">
+          Terjemahan memerlukan koneksi internet.
+        </p>
+        <button id="translateButton" class="translate-button" type="submit">
+          Terjemahkan
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M5 12h14m-6-6 6 6-6 6"/>
+          </svg>
+        </button>
+      </div>
+    </form>
+
+    <footer class="page-footer">
+      <span>Terjemahan didukung oleh MyMemory</span>
+      <span>Translator</span>
+    </footer>
+  </main>
 </body>
-
 </html>

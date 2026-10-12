@@ -1,70 +1,213 @@
-const fromText = document.querySelector(".from-text"),
-  toText = document.querySelector(".to-text"),
-  exchageIcon = document.querySelector(".exchange"),
-  selectTag = document.querySelectorAll("select"),
-  icons = document.querySelectorAll(".row i");
-translateBtn = document.querySelector("button"),
+const sourceText = document.querySelector("#sourceText");
+const resultText = document.querySelector("#resultText");
+const sourceLanguage = document.querySelector("#sourceLanguage");
+const targetLanguage = document.querySelector("#targetLanguage");
+const translatorForm = document.querySelector("#translatorForm");
+const translateButton = document.querySelector("#translateButton");
+const swapButton = document.querySelector("#swapLanguages");
+const statusMessage = document.querySelector("#statusMessage");
 
-  selectTag.forEach((tag, id) => {
-    for (let country_code in countries) {
-      let selected = id == 0 ? country_code == "en-GB" ? "selected" : "" : country_code == "hi-IN" ? "selected" : "";
-      let option = `<option ${selected} value="${country_code}">${countries[country_code]}</option>`;
-      tag.insertAdjacentHTML("beforeend", option);
+function setStatus(message, state = "info") {
+  statusMessage.textContent = message;
+  statusMessage.dataset.state = state;
+}
+
+function populateLanguages() {
+  if (typeof countries === "undefined") {
+    setStatus("Daftar bahasa gagal dimuat. Periksa file countries.js.", "error");
+    translateButton.disabled = true;
+    return;
+  }
+
+  for (const [code, name] of Object.entries(countries)) {
+    const sourceOption = document.createElement("option");
+    sourceOption.value = code;
+    sourceOption.textContent = name;
+    sourceLanguage.append(sourceOption);
+
+    const targetOption = document.createElement("option");
+    targetOption.value = code;
+    targetOption.textContent = name;
+    targetLanguage.append(targetOption);
+  }
+
+  sourceLanguage.value = countries["en-GB"] ? "en-GB" : Object.keys(countries)[0];
+  targetLanguage.value = countries["id-ID"]
+    ? "id-ID"
+    : countries["hi-IN"]
+      ? "hi-IN"
+      : Object.keys(countries)[1];
+}
+
+async function translateText(event) {
+  event.preventDefault();
+
+  const text = sourceText.value.trim();
+  const from = sourceLanguage.value;
+  const to = targetLanguage.value;
+
+  if (!text) {
+    resultText.value = "";
+    setStatus("Masukkan teks yang ingin diterjemahkan.", "error");
+    sourceText.focus();
+    return;
+  }
+
+  if (!from || !to) {
+    setStatus("Pilih bahasa sumber dan bahasa tujuan.", "error");
+    return;
+  }
+
+  if (from === to) {
+    setStatus("Pilih bahasa tujuan yang berbeda.", "error");
+    return;
+  }
+
+  translateButton.disabled = true;
+  translateButton.textContent = "Menerjemahkan…";
+  resultText.value = "";
+  resultText.placeholder = "Sedang menerjemahkan...";
+  setStatus("Menghubungi layanan terjemahan…");
+
+  try {
+    const params = new URLSearchParams({
+      q: text,
+      langpair: `${from}|${to}`
+    });
+
+    const response = await fetch(
+      `https://api.mymemory.translated.net/get?${params.toString()}`
+    );
+
+    if (!response.ok) {
+      throw new Error(`Layanan terjemahan merespons dengan status ${response.status}.`);
     }
-  });
 
-exchageIcon.addEventListener("click", () => {
-  let tempText = fromText.value,
-    tempLang = selectTag[0].value;
-  fromText.value = toText.value;
-  toText.value = tempText;
-  selectTag[0].value = selectTag[1].value;
-  selectTag[1].value = tempLang;
-});
+    const data = await response.json();
+    const translatedText = data.responseData?.translatedText;
 
-fromText.addEventListener("keyup", () => {
-  if (!fromText.value) {
-    toText.value = "";
+    if (data.responseStatus && Number(data.responseStatus) !== 200) {
+      throw new Error(data.responseDetails || "Layanan tidak dapat menerjemahkan teks ini.");
+    }
+
+    if (typeof translatedText !== "string" || !translatedText.trim()) {
+      throw new Error("Layanan tidak mengirim hasil terjemahan.");
+    }
+
+    resultText.value = translatedText;
+    resultText.placeholder = "Hasil terjemahan akan muncul di sini.";
+    setStatus("Terjemahan selesai.", "success");
+  } catch (error) {
+    resultText.value = "";
+    resultText.placeholder = "Terjemahan gagal.";
+    setStatus(
+      error instanceof TypeError
+        ? "Tidak dapat terhubung. Periksa koneksi internet lalu coba lagi."
+        : error.message || "Terjadi kesalahan saat menerjemahkan.",
+      "error"
+    );
+  } finally {
+    translateButton.disabled = false;
+    translateButton.innerHTML = `Terjemahkan
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M5 12h14m-6-6 6 6-6 6"/>
+      </svg>`;
+  }
+}
+
+function swapLanguages() {
+  const oldSourceLanguage = sourceLanguage.value;
+  sourceLanguage.value = targetLanguage.value;
+  targetLanguage.value = oldSourceLanguage;
+
+  const oldSourceText = sourceText.value;
+  sourceText.value = resultText.value;
+  resultText.value = oldSourceText;
+
+  if (sourceText.value.trim()) {
+    setStatus("Bahasa dan teks berhasil ditukar.");
+  }
+}
+
+async function copyText(text) {
+  if (navigator.clipboard && window.isSecureContext) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+
+  const temporaryTextArea = document.createElement("textarea");
+  temporaryTextArea.value = text;
+  temporaryTextArea.setAttribute("readonly", "");
+  temporaryTextArea.style.position = "fixed";
+  temporaryTextArea.style.opacity = "0";
+  document.body.append(temporaryTextArea);
+  temporaryTextArea.select();
+
+  const copied = document.execCommand("copy");
+  temporaryTextArea.remove();
+
+  if (!copied) {
+    throw new Error("Clipboard tidak tersedia di perangkat ini.");
+  }
+}
+
+async function handleCopy(target) {
+  const text = target === "source" ? sourceText.value : resultText.value;
+
+  if (!text.trim()) {
+    setStatus("Tidak ada teks untuk disalin.", "error");
+    return;
+  }
+
+  try {
+    await copyText(text);
+    setStatus("Teks berhasil disalin.", "success");
+  } catch (error) {
+    setStatus(error.message || "Teks gagal disalin.", "error");
+  }
+}
+
+function handleSpeak(target) {
+  const text = target === "source" ? sourceText.value : resultText.value;
+  const language = target === "source" ? sourceLanguage.value : targetLanguage.value;
+
+  if (!text.trim()) {
+    setStatus("Tidak ada teks untuk dibacakan.", "error");
+    return;
+  }
+
+  if (!("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === "undefined") {
+    setStatus("Fitur suara tidak didukung oleh perangkat ini.", "error");
+    return;
+  }
+
+  window.speechSynthesis.cancel();
+
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = language;
+  window.speechSynthesis.speak(utterance);
+}
+
+translatorForm.addEventListener("submit", translateText);
+swapButton.addEventListener("click", swapLanguages);
+
+sourceText.addEventListener("input", () => {
+  if (!sourceText.value.trim()) {
+    resultText.value = "";
+    setStatus("Terjemahan memerlukan koneksi internet.");
   }
 });
 
-translateBtn.addEventListener("click", () => {
-  let text = fromText.value.trim(),
-    translateFrom = selectTag[0].value,
-    translateTo = selectTag[1].value;
-  if (!text) return;
-  toText.setAttribute("placeholder", "Translating...");
-  let apiUrl = `https://api.mymemory.translated.net/get?q=${text}&langpair=${translateFrom}|${translateTo}`;
-  fetch(apiUrl).then(res => res.json()).then(data => {
-    toText.value = data.responseData.translatedText;
-    data.matches.forEach(data => {
-      if (data.id === 0) {
-        toText.value = data.translation;
-      }
-    });
-    toText.setAttribute("placeholder", "Translation");
-  });
-});
+document.querySelectorAll("[data-action]").forEach((button) => {
+  button.addEventListener("click", () => {
+    const { action, target } = button.dataset;
 
-icons.forEach(icon => {
-  icon.addEventListener("click", ({ target }) => {
-    if (!fromText.value || !toText.value) return;
-    if (target.classList.contains("fa-copy")) {
-      if (target.id == "from") {
-        navigator.clipboard.writeText(fromText.value);
-      } else {
-        navigator.clipboard.writeText(toText.value);
-      }
-    } else {
-      let utterance;
-      if (target.id == "from") {
-        utterance = new SpeechSynthesisUtterance(fromText.value);
-        utterance.lang = selectTag[0].value;
-      } else {
-        utterance = new SpeechSynthesisUtterance(toText.value);
-        utterance.lang = selectTag[1].value;
-      }
-      speechSynthesis.speak(utterance);
+    if (action === "copy") {
+      handleCopy(target);
+    } else if (action === "speak") {
+      handleSpeak(target);
     }
   });
 });
+
+populateLanguages();
