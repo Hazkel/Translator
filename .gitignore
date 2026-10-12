@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+android/app/build/
+android/build/
+
+# Android / Gradle local files
+.gradle/
+android/.gradle/
+local.properties
+*.iml
+
+# IDE files
+.idea/
+.vscode/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Environment files and signing credentials
+.env
+.env.*
+!.env.example
+*.keystore
+*.jks
+
+# OS files
+.DS_Store
+Thumbs.db

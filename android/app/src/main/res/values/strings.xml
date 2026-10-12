@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Translate</string>
+    <string name="title_activity_main">Translate</string>
+    <string name="package_name">com.translate.app</string>
+    <string name="custom_url_scheme">com.translate.app</string>
+</resources>
