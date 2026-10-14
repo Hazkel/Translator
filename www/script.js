@@ -6,10 +6,60 @@ const translatorForm = document.querySelector("#translatorForm");
 const translateButton = document.querySelector("#translateButton");
 const swapButton = document.querySelector("#swapLanguages");
 const statusMessage = document.querySelector("#statusMessage");
+const themeToggle = document.querySelector("#themeToggle");
 
 function setStatus(message, state = "info") {
   statusMessage.textContent = message;
   statusMessage.dataset.state = state;
+}
+
+function applyTheme(theme, persist = false) {
+  const selectedTheme = theme === "dark" ? "dark" : "light";
+  const isDark = selectedTheme === "dark";
+
+  document.documentElement.dataset.theme = selectedTheme;
+  document.body.dataset.theme = selectedTheme;
+  themeToggle.setAttribute("aria-pressed", String(isDark));
+
+  const icon = themeToggle.querySelector("span");
+  icon.textContent = isDark ? "☀" : "☾";
+
+  const actionLabel = isDark
+    ? "Aktifkan mode terang"
+    : "Aktifkan mode gelap";
+
+  themeToggle.setAttribute("aria-label", actionLabel);
+  themeToggle.title = actionLabel;
+
+  if (persist) {
+    try {
+      localStorage.setItem("translator-theme", selectedTheme);
+    } catch {
+      setStatus(
+        "Tema berubah, tetapi preferensi tidak dapat disimpan di perangkat ini.",
+        "error"
+      );
+    }
+  }
+}
+
+function initializeTheme() {
+  let savedTheme = "light";
+
+  try {
+    const storedTheme = localStorage.getItem("translator-theme");
+
+    if (storedTheme === "light" || storedTheme === "dark") {
+      savedTheme = storedTheme;
+    }
+  } catch {
+    setStatus(
+      "Preferensi tema tidak dapat dimuat. Tema terang digunakan.",
+      "error"
+    );
+  }
+
+  applyTheme(savedTheme);
 }
 
 function populateLanguages() {
@@ -31,7 +81,10 @@ function populateLanguages() {
     targetLanguage.append(targetOption);
   }
 
-  sourceLanguage.value = countries["en-GB"] ? "en-GB" : Object.keys(countries)[0];
+  sourceLanguage.value = countries["en-GB"]
+    ? "en-GB"
+    : Object.keys(countries)[0];
+
   targetLanguage.value = countries["id-ID"]
     ? "id-ID"
     : countries["hi-IN"]
@@ -80,14 +133,18 @@ async function translateText(event) {
     );
 
     if (!response.ok) {
-      throw new Error(`Layanan terjemahan merespons dengan status ${response.status}.`);
+      throw new Error(
+        `Layanan terjemahan merespons dengan status ${response.status}.`
+      );
     }
 
     const data = await response.json();
     const translatedText = data.responseData?.translatedText;
 
     if (data.responseStatus && Number(data.responseStatus) !== 200) {
-      throw new Error(data.responseDetails || "Layanan tidak dapat menerjemahkan teks ini.");
+      throw new Error(
+        data.responseDetails || "Layanan tidak dapat menerjemahkan teks ini."
+      );
     }
 
     if (typeof translatedText !== "string" || !translatedText.trim()) {
@@ -100,6 +157,7 @@ async function translateText(event) {
   } catch (error) {
     resultText.value = "";
     resultText.placeholder = "Terjemahan gagal.";
+
     setStatus(
       error instanceof TypeError
         ? "Tidak dapat terhubung. Periksa koneksi internet lalu coba lagi."
@@ -169,14 +227,18 @@ async function handleCopy(target) {
 
 function handleSpeak(target) {
   const text = target === "source" ? sourceText.value : resultText.value;
-  const language = target === "source" ? sourceLanguage.value : targetLanguage.value;
+  const language =
+    target === "source" ? sourceLanguage.value : targetLanguage.value;
 
   if (!text.trim()) {
     setStatus("Tidak ada teks untuk dibacakan.", "error");
     return;
   }
 
-  if (!("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === "undefined") {
+  if (
+    !("speechSynthesis" in window) ||
+    typeof SpeechSynthesisUtterance === "undefined"
+  ) {
     setStatus("Fitur suara tidak didukung oleh perangkat ini.", "error");
     return;
   }
@@ -190,6 +252,11 @@ function handleSpeak(target) {
 
 translatorForm.addEventListener("submit", translateText);
 swapButton.addEventListener("click", swapLanguages);
+
+themeToggle.addEventListener("click", () => {
+  const currentTheme = document.documentElement.dataset.theme;
+  applyTheme(currentTheme === "dark" ? "light" : "dark", true);
+});
 
 sourceText.addEventListener("input", () => {
   if (!sourceText.value.trim()) {
@@ -210,4 +277,5 @@ document.querySelectorAll("[data-action]").forEach((button) => {
   });
 });
 
+initializeTheme();
 populateLanguages();
